@@ -112,7 +112,8 @@ data/tokenized/pretrain.bin   1.5GB   预训练 token 流（uint16，786M token�
 data/tokenized/sft.pt          28MB   SFT 样本（ids + 掩码后的 labels）
 ```
 
-- `pretrain.bin` 由 `_corpus_cache` 四个文件按 8:2:1:1 混合抽样，随机窗口切 512
+- `pretrain.bin` 从 `_corpus_cache` 的多份纯文本按**字节数配额**等比抽样（等距跳行，不从头顺读），
+  每条后接 `</s>`，编码成 uint16 流；token 量按 6 字节/token 保守估算，抽不满会自动放大目标重跑
 - `sft.pt` 是 21.5k 轨迹 + 8.4k 通用对话（`--chat-ratio 0.28`），**只对 assistant 段计 loss**
 - 分词结束会打印一条还原样本，**务必肉眼确认**协议 token 与掩码是否正确（这一步能提前发现 80% 的坑）
 
@@ -140,7 +141,8 @@ python run.py pretrain --arch 37m --steps 24000 --out checkpoints/base.pt
 | `37m` | 37.3M | 576 | 8 | 1536 | 4.4GB | 33.5k tok/s | ~6.5h |
 | `60m` | 62.1M | 768 | 8 | 2048 | 5.5GB | 24.6k tok/s | ~9.5h |
 
-24000 步 × batch 16 × accum 4 × seq 512 = **786M token**（约 9.5 个 epoch，数据有重复，但小模型吃不饱）。
+24000 步 × batch 16 × accum 4 × seq 512 = **786M token**。相对 full 档全部语料这不到一遍（约 1/5），
+mini 档则会重复约 1.3 遍——62M 模型在这个量级已收敛，再堆 token 的收益远小于扩容。
 
 预期日志：
 

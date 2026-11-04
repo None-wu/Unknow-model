@@ -2,7 +2,7 @@
 
 **一个 62M 参数、从零训练、能在本地命令行里真正干活的中文 Agent 小模型。**
 
-它不做通用问答，只专注一件事：把中文口语指令翻译成**结构化的工具调用**，交给沙箱执行，再把结果说人话回来。全部代码约 4600 行纯 PyTorch，单张 8GB 消费级显卡 10 小时可以完整复现。
+它不做通用问答，只专注一件事：把中文口语指令翻译成**结构化的工具调用**，交给沙箱执行，再把结果说人话回来。全部代码约 4900 行纯 PyTorch，单张 8GB 消费级显卡 10 小时可以完整复现。
 
 ```text
 你> 这目录下都有啥
@@ -31,7 +31,7 @@
 | 留出集：参数完全匹配 | 99.0% | **100%** |
 | 口语探针：工具选择 | 75% | **100%（24/24）** |
 | 口语探针：参数全对 | 71% | **96%（23/24）** |
-| 端到端验收（22 项） | 15 通过 / 4 部分 / 3 失败 | **22 通过 / 0 / 0** |
+| 端到端验收（22 项） | 19 通过 / 2 部分 / 1 失败 | **22 通过 / 0 / 0** |
 
 同一套数据、同一套流程，只把 `dim 576→768`、`ffn 1536→2048`，口语探针从 75% 跳到 100%——**瓶颈是容量，不是训练量**。完整对比与逐项明细见 [docs/BENCHMARK.md](docs/BENCHMARK.md)。
 
@@ -65,7 +65,12 @@ pip install -r requirements.txt  # 需要 CUDA 版 torch 请按 pytorch.org 指�
 
 **B. 自己训（想复现）**
 
-见下一节，或直接跑 `python scripts/quickstart.ps1`（Windows）/ `bash scripts/quickstart.sh --smoke`（Linux/macOS）。
+见下一节，或直接跑一键脚本：
+
+```bash
+powershell -ExecutionPolicy Bypass -File scripts\quickstart.ps1 -Smoke   # Windows 冒烟，10 分钟
+bash scripts/quickstart.sh --smoke                                       # Linux/macOS
+```
 
 ### 2. 开始用
 
@@ -207,7 +212,20 @@ docs/                   复现步骤 · 架构 · 踩坑 · 评测明细
 
 ## 踩坑记录
 
-这个项目 90% 的时间花在 debug 上，且几乎每个 bug 都"看起来像模型不行，实际是数据/代码错了"。12 个真实坑（SFT 标签双位移、`<|end|>` 漏进自由文本、int 参数无终止符、约束解码反而降准确率……）全部整理在 [docs/PITFALLS.md](docs/PITFALLS.md)——**想复现的人建议先读它，能省两天**。
+这个项目 90% 的时间花在 debug 上，且几乎每个 bug 都"看起来像模型不行，实际是数据/代码错了"。14 个真实坑（SFT 标签双位移、`<|end|>` 漏进自由文本、int 参数无终止符、约束解码反而降准确率……）全部整理在 [docs/PITFALLS.md](docs/PITFALLS.md)——**想复现的人建议先读它，能省两天**。
+
+---
+
+## 文档
+
+| 文档 | 内容 |
+|------|------|
+| [docs/REPRODUCE.md](docs/REPRODUCE.md) | 从零复现：环境、六阶段命令、耗时表、常见问题、自检清单 |
+| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | 设计决策：模型、协议、工具 DSL、沙箱、合成、约束解码、壳层护栏 |
+| [docs/PITFALLS.md](docs/PITFALLS.md) | 14 个真实 bug 的现象/根因/修法 + 调试方法论 |
+| [docs/BENCHMARK.md](docs/BENCHMARK.md) | 全部评测数据、37M vs 62M、四轮迭代、口径说明 |
+| [docs/PUBLISH.md](docs/PUBLISH.md) | 发布到 GitHub 的步骤与自检清单 |
+| [samples/README.md](samples/README.md) | 语料与轨迹的格式说明 |
 
 ---
 
