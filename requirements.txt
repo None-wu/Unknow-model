@@ -1,0 +1,9 @@
+# 训练与推理依赖（本项目只在 PyTorch 原生实现上跑，不依赖 transformers 的模型代码）
+# Python >= 3.10
+torch>=2.1
+transformers>=4.40          # 仅用 PreTrainedTokenizerFast 读 tokenizer.json
+tokenizers>=0.15            # 训练 BPE 词表
+numpy>=1.24
+huggingface_hub>=0.23       # scripts/prepare_corpus.py 下载语料
+
+# 可选：NVIDIA GPU 请按 https://pytorch.org 选择对应的 CUDA 版本安装 torch

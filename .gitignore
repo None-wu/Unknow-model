@@ -1,0 +1,42 @@
+# ---------------- 虚拟环境 / 编译产物 ----------------
+.venv/
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+
+# ---------------- 语料（体积大、授权受限，用 scripts/prepare_corpus.py 下载） ----------------
+_corpus_cache/
+data/pretrain_t2t*.jsonl
+data/sft_t2t*.jsonl
+data/dpo.jsonl
+data/rlaif.jsonl
+data/lora_*.jsonl
+data/_tok_sample.txt
+data/_*
+
+# 可复现的中间数据：run.py synth 与 tools/extra_sft.py 生成
+# 只保留最终训练用的那份，其余都在本地重建
+data/tool_sft.jsonl
+data/tool_sft_v*.jsonl
+
+# ---------------- 训练产出 ----------------
+data/tokenized/
+checkpoints/
+release/
+out/
+tools/_fixture/
+*.pt
+*.bin
+
+# ---------------- 本地工具链 ----------------
+.workbuddy/
+.tmp_*/
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+
+# 早期 1446 词表的实验版本（无中文 token），仅保留本地
+tokenizer/tokenizer_v2/

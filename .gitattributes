@@ -1,0 +1,13 @@
+# 统一换行：源码 LF，Windows 脚本 CRLF，避免跨平台 diff 噪声
+* text=auto eol=lf
+*.bat text eol=crlf
+*.ps1 text eol=crlf
+*.sh text eol=lf
+
+# 模型权重与分词产物按二进制处理
+*.pt binary
+*.bin binary
+*.pyc binary
+
+# 大语料不做 diff
+*.jsonl text eol=lf
