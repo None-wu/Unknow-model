@@ -239,6 +239,78 @@ def main() -> None:
                 {"t": "assistant", "text": "目录里有 README.md、app.log、notes.txt，共 3 项。"},
             ], "meta": {"cmd": []}})
 
+    # 8) 知识问答 -> 拒答：模型只学过文件操作，通用知识问题（"Apache-2.0 是什么"）
+    #    在训练分布外，会退化成乱码/幻觉调用。教它礼貌承认不会，把话题拉回本行。
+    KNOW_TOPICS = [
+        "Apache-2.0 授权", "CC-BY-NC 授权", "MIT 协议", "GPL 协议",
+        "HTTP 协议", "TCP 和 UDP", "机器学习", "深度学习", "区块链",
+        "量子计算", "相对论", "进化论", "光合作用", "黑洞",
+        "Python 的 GIL", "Docker 的原理", "Kubernetes", "TCP 三次握手",
+        "敏捷开发", "微服务架构", "操作系统内核", "编译原理",
+        "美联储加息", "通货膨胀", "股票市盈率", "汇率",
+        "唐诗和宋词", "文艺复兴", "第二次世界大战", "长城的历史",
+    ]
+    KNOW_PATTERNS = [
+        "{t}是什么", "什么是{t}", "{t}是什么意思", "解释一下{t}",
+        "给我讲讲{t}", "{t}是怎么回事",
+    ]
+    COMPARE = [("Apache-2.0", "MIT"), ("TCP", "UDP"), ("HTTP", "HTTPS"),
+               ("进程", "线程"), ("Python", "Java"), ("深度学习", "机器学习")]
+    WHY = ["为什么天是蓝的", "为什么会下雨", "为什么猫会叫", "为什么代码会有 bug 这么难学",
+           "为什么地球是圆的"]
+    CHAT_OOD = [("讲个笑话", "我讲不好笑话，只会操作文件和命令。要不要我帮你看点项目里的东西？"),
+                ("写一首诗", "写诗不是我的强项，我是文件操作助手。有文件要改、要查的尽管说。"),
+                ("翻译一段英文", "翻译不在我的能力范围。如果你要把翻译结果写进某个文件，可以先把译文给我，我帮你写入。"),
+                ("今天股市怎么样", "我查不了行情，只能操作本地文件和跑命令。")]
+    REFUSE_KNOW = [
+        "这个知识问答超出了我的能力，我只会文件/目录操作和运行命令。",
+        "我是文件操作助手，通用知识不在我的能力范围内。如果你想查的是项目里的内容，我可以帮你 grep 一下。",
+        "这个我答不了——我是个小型工具模型，只会查目录、搜文本、读写文件和跑命令。",
+        "知识问答不是我的活儿。有文件要处理的话，直接说文件名和想做的事。",
+        "这个问题我回答不了。我的能力是：列目录、看文件、搜索内容、简单计算和文件修改。",
+    ]
+
+    def _know(kind_q: str, ans: str) -> dict:
+        return {"kind": "refuse", "events": [
+            {"t": "user", "text": kind_q}, {"t": "assistant", "text": ans}]}
+
+    n_know = 0
+    for t in KNOW_TOPICS:
+        for phr in KNOW_PATTERNS:
+            extra.append(_know(phr.format(t=t), REFUSE_KNOW[n_know % len(REFUSE_KNOW)]))
+            n_know += 1
+    for a_, b_ in COMPARE:
+        for phr in ("{a} 和 {b} 有什么区别", "{a}跟{b}的区别是什么"):
+            extra.append(_know(phr.format(a=a_, b=b_),
+                               REFUSE_KNOW[n_know % len(REFUSE_KNOW)]))
+            n_know += 1
+    for q in WHY:
+        extra.append(_know(q, REFUSE_KNOW[n_know % len(REFUSE_KNOW)]))
+        n_know += 1
+    for q, ans in CHAT_OOD:
+        extra.append(_know(q, ans))
+        n_know += 1
+
+    # 7.5) "结构" -> tree 的对照样本：第 7 类的 list_dir 数据会把
+    #      "看看 X 这个目录的结构" 带偏成 list_dir（只回文件名、不提目录名）。
+    #      明确划界：说"结构" -> tree 递归列出；说"里面有什么" -> list_dir。
+    for d, listing in (("src", "./config.json\n./main.py\n./utils.py"),
+                       ("build", "./app.log\n./notes.txt\n./output.bin"),
+                       ("docs", "./guide.md\n./api.md\n./img"),
+                       ("tools", "./schema.py\n./executor.py\n./synth.py"),
+                       (".", "./README.md\n./src\n./build\n./docs\n./logs")):
+        names = [ln.split("/")[-1] for ln in listing.splitlines()]
+        summary = f"{d} 的结构：{'、'.join(names[:5])}，共 {len(names)} 项。"
+        for phr in ("看看 {d} 这个目录的结构", "{d} 的目录结构是怎样的",
+                    "梳理一下 {d} 的结构", "看下 {d} 的结构，不要修改"):
+            u = phr.format(d=d)
+            extra.append({"kind": "single", "events": [
+                {"t": "user", "text": u},
+                {"t": "call", "name": "tree", "args": {"path": d},
+                 "output": listing, "ok": True},
+                {"t": "assistant", "text": summary},
+            ], "meta": {"cmd": [f"find {d} -maxdepth 2 | sort"]}})
+
     out_path = ROOT / a.out
     with out_path.open("w", encoding="utf-8") as f:
         f.writelines(base)

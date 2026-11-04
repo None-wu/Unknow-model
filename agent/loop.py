@@ -228,10 +228,16 @@ class Agent:
                 if looped and trace:
                     # 复读说明它已经总结不动了：与其输出半句垃圾，不如给结构化结果
                     return self._fallback_summary()
-                clean = text.replace(END_TOKEN, "").strip()
+                if looped or CALL_TOKEN in text:
+                    # 无上下文可降级（如知识问答直接退化）或漏出调用原文：
+                    # 小模型 OOD 的标准表现。清掉被污染的上下文，给一句能看的话。
+                    self.ids = []
+                    return ("抱歉，这条我没处理明白。我只会文件/目录操作和运行命令，"
+                            "知识问答类的问题超出了我的能力；操作类的请换个具体说法再试。")
+                clean = re.sub(r"<\|[^|]*\|>", "", text.replace(END_TOKEN, "")).strip()
                 # 小模型 OOD 时会把自己上一轮的调用 JSON 尾巴抄进答案，
                 # 形如 `目录里有 xxx","args":{"path":"build"}}` —— 把语法垃圾裁掉。
-                if '"args"' in clean and CALL_TOKEN not in text:
+                if '"args"' in clean:
                     clean = re.split(r'",\s*"args"', clean)[0].rstrip('" ,')
                 return clean if clean else "（模型没有给出内容）"
 
