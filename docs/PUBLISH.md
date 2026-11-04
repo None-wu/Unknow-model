@@ -17,10 +17,10 @@ git status            # 干净
 
 ## 2. 建远程仓库并推送
 
-在 GitHub 上新建一个空仓库（不要勾选 Add README/.gitignore/LICENSE），然后：
+已发布在 **https://github.com/None-wu/Unknow-model**（public，含 topics 标签）。
 
 ```bash
-git remote add origin https://github.com/<你的用户名>/unknow.git
+git remote add origin https://github.com/None-wu/Unknow-model.git
 git push -u origin main
 ```
 

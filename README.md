@@ -49,9 +49,12 @@
 
 ## 快速开始
 
-### 0. 装依赖
+### 0. 拿代码、装依赖
 
 ```bash
+git clone https://github.com/None-wu/Unknow-model.git
+cd Unknow-model
+
 python -m venv .venv
 .venv/Scripts/activate          # Windows；Linux/macOS 用 source .venv/bin/activate
 pip install -r requirements.txt  # 需要 CUDA 版 torch 请按 pytorch.org 指引安装
